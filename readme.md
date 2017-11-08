@@ -1,51 +1,78 @@
-<p align="center"><img src="https://laravel.com/assets/img/components/logo-laravel.svg"></p>
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/d/total.svg" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/v/stable.svg" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://poser.pugx.org/laravel/framework/license.svg" alt="License"></a>
-</p>
+## migrations
 
-## About Laravel
+users                   :   This holds the users data of the application
+password_resets         :   Holds token information when users request a new password
+permissions             :   This holds the various permissions needed in the application
+roles                   :   This holds the roles in our application
+role_has_permission     :   This is a pivot table that holds relationship information between the permissions table and the role table
+user_has_roles          :   Also a pivot table, holds relationship information between the roles and the users table.
+user_has_permissions    :   Also a pivot table, holds relationship information between the users table and the permissions table.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel attempts to take the pain out of development by easing common tasks used in the majority of web projects, such as:
+## Configuration
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+[ php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider" --tag="config" ]
 
-Laravel is accessible, yet powerful, providing tools needed for large, robust applications. A superb combination of simplicity, elegance, and innovation give you tools you need to build any application with which you are tasked.
+The config file allows us to set the location of the Eloquent model of the permission and role class. You can also manually set the table names that should be used to retrieve your roles and permissions. Next we need to add the HasRoles trait to the User model:
 
-## Learning Laravel
+##A role can be created like a regular Eloquent model, like this:
 
-Laravel has the most extensive and thorough documentation and video tutorial library of any modern web application framework. The [Laravel documentation](https://laravel.com/docs) is thorough, complete, and makes it a breeze to get started learning the framework.
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
-If you're not in the mood to read, [Laracasts](https://laracasts.com) contains over 900 video tutorials on a range of topics including Laravel, modern PHP, unit testing, JavaScript, and more. Boost the skill level of yourself and your entire team by digging into our comprehensive video library.
+$role = Role::create(['name' => 'writer']);
+$permission = Permission::create(['name' => 'edit articles']);
 
-## Laravel Sponsors
+##Can also get the permissions associated to a user like this:
+$permissions = $user->permissions;
 
-We would like to extend our thanks to the following sponsors for helping fund on-going Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](http://patreon.com/taylorotwell):
+##Using the pluck method, pluck() you can get the role names associated with a user like this:
+$roles = $user->roles()->pluck('name');
 
-- **[Vehikl](http://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[British Software Development](https://www.britishsoftware.co)**
-- **[Styde](https://styde.net)**
-- [Fragrantica](https://www.fragrantica.com)
-- [SOFTonSOFA](https://softonsofa.com/)
+##Other Methods
+Other methods available to us include:
 
-## Contributing
+    givePermissionTo(): Allows us to give persmission to a user or role
+    revokePermissionTo(): Revoke permission from a user or role
+    hasPermissionTo(): Check if a user or role has a given permission
+    assignRole(): Assigns role to a user
+    removeRole(): Removes role from a user
+    hasRole(): Checks if a user has a role
+    hasAnyRole(Role::all()): Checks if a user has any of a given list of roles
+    hasAllRoles(Role::all()): Checks if a user has all of a given list of role
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](http://laravel.com/docs/contributions).
+The methods assignRole, hasRole, hasAnyRole, hasAllRoles and removeRole can accept a string, a Spatie\Permission\Models\Role-object or an \Illuminate\Support\Collection object. The givePermissionTo and revokePermissionTo methods can accept a string or a Spatie\Permission\Models\Permission object.
 
-## Security Vulnerabilities
+#Laravel-Permission also allows to use Blade directives to verify if the logged in user has all or any of a given list of roles:
+-------------------------------------
+@role('writer')
+    I'm a writer!
+@else
+    I'm not a writer...
+@endrole
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell at taylor@laravel.com. All security vulnerabilities will be promptly addressed.
+@hasrole('writer')
+    I'm a writer!
+@else
+    I'm not a writer...
+@endhasrole
 
-## License
+@hasanyrole(Role::all())
+    I have one or more of these roles!
+@else
+    I have none of these roles...
+@endhasanyrole
 
-The Laravel framework is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT).
+@hasallroles(Role::all())
+    I have all of these roles!
+@else
+    I don't have all of these roles...
+@endhasallroles
+-------------------------------------
+
+The Blade directives above depends on the users role. Sometimes we need to check directly in our view if a user has a certain permission. You can do that using Laravel's native @can directive:
+-------------------------------------
+@can('Edit Post')
+    I have permission to edit
+@endcan
+-------------------------------------
