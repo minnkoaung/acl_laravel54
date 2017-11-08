@@ -1,0 +1,9 @@
+*** migrations
+This keeps track of migration process that have ran
+users                   :   This holds the users data of the application
+password_resets         :   Holds token information when users request a new password
+permissions             :   This holds the various permissions needed in the application
+roles                   :   This holds the roles in our application
+role_has_permission     :   This is a pivot table that holds relationship information between the permissions table and the role table
+user_has_roles          :   Also a pivot table, holds relationship information between the roles and the users table.
+user_has_permissions    :   Also a pivot table, holds relationship information between the users table and the permissions table.
